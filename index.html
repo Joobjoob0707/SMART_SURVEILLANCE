@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Drive Thru - Dashboard</title>
+    <script src="[cdn.jsdelivr.net](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f5f0;
+            display: flex;
+            min-height: 100vh;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #1a5c3a 0%, #0d3d26 100%);
+            color: white;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        .nav-menu {
+            list-style: none;
+            padding: 15px 0;
+            flex: 1;
+        }
+        .nav-menu li {
+            margin: 5px 10px;
+        }
+        .nav-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        .nav-menu a:hover, .nav-menu a.active {
+            background: rgba(255,255,255,0.15);
+        }
+        .nav-menu a.active {
+            background: #2ecc71;
+        }
+        .nav-menu .icon {
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        .qr-section {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        .qr-section h4 {
+            font-size: 12px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        .qr-code {
+            width: 120px;
+            height: 120px;
+            background: white;
+            margin: 0 auto 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+        }
+        .line-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #00B900;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Header */
+        .header {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left h1 {
+            color: #1a5c3a;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .header-left p {
+            color: #666;
+            font-size: 13px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #1a5c3a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        /* Filters */
+        .filters {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-group label {
+            font-size: 13px;
+            color: #555;
+            font-weight: 500;
+        }
+        .filter-group input, .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: #1a5c3a;
+        }
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: #1a5c3a;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #145230;
+        }
+        .btn-secondary {
+            background: #e8f5e9;
+            color: #1a5c3a;
+        }
+        .btn-secondary:hover {
+            background: #c8e6c9;
+        }
+        /* Dashboard Content */
+        .dashboard {
+            padding: 25px 30px;
+            flex: 1;
+        }
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .summary-card {
+            position: relative;
+            overflow: hidden;
+        }
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+        .summary-card.total::before { background: #1a5c3a; }
+        .summary-card.passed::before { background: #2ecc71; }
+        .summary-card.warning::before { background: #f39c12; }
+        .summary-card.failed::before { background: #e74c3c; }
+        .summary-card.pending::before { background: #3498db; }
+        .summary-card .card-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+        .summary-card.total .card-icon { background: #e8f5e9; color: #1a5c3a; }
+        .summary-card.passed .card-icon { background: #d5f5e3; color: #2ecc71; }
+        .summary-card.warning .card-icon { background: #fef9e7; color: #f39c12; }
+        .summary-card.failed .card-icon { background: #fdedec; color: #e74c3c; }
+        .summary-card.pending .card-icon { background: #ebf5fb; color: #3498db; }
+        .summary-card .card-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        .summary-card .card-label {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .summary-card .card-trend {
+            font-size: 11px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .trend-up { color: #2ecc71; }
+        .trend-down { color: #e74c3c; }
+        /* Charts Section */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .chart-card {
+            padding: 20px;
+        }
+        .chart-card h3 {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            height: 200px;
+        }
+        /* Line Chart Section */
+        .line-chart-section {
+            margin-bottom: 25px;
+        }
+        .line-chart-card {
+            padding: 20px;
+        }
+        .line-chart-card h3 {
+            font-size: 15px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .line-chart-container {
+            position: relative;
+            height: 280px;
+        }
+        /* Table Section */
+        .table-section {
+            margin-bottom: 25px;
+        }
+        .table-card {
+            padding: 20px;
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .table-header h3 {
+            font-size: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        .risk-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .risk-table th {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 12px;
+            color: #555;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .risk-table td {
+            padding: 12px 15px;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #333;
+        }
+        .risk-table tr:hover {
+            background: #f8fdf8;
+        }
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .status-high {
+            background: #fdedec;
+            color: #e74c3c;
+        }
+        .status-medium {
+            background: #fef9e7;
+            color: #f39c12;
+        }
+        .status-low {
+            background: #d5f5e3;
+            color: #27ae60;
+        }
+        .action-btn {
+            padding: 5px 12px;
+            background: #e8f5e9;
+            color: #1a5c3a;
+            border: none;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            background: #1a5c3a;
+            color: white;
+        }
+        /* Footer */
+        .footer {
+            background: white;
+            padding: 15px 30px;
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .summary-cards {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .charts-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar-header h2, .sidebar-header p,
+            .nav-menu span, .qr-section {
+                display: none;
+            }
+            .nav-menu a {
+                justify-content: center;
+                padding: 15px;
+            }
+            .nav-menu .icon {
+                margin-right: 0;
+            }
+            .main-content {
+                margin-left: 70px;
+            }
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>🏥 Smart Drive Thru</h2>
+            <p>ระบบตรวจสอบอาหารปลอดภัย</p>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="#" class="active"><span class="icon">📊</span><span>แดชบอร์ด</span></a></li>
+            <li><a href="#"><span class="icon">🔍</span><span>ตรวจสอบผลิตภัณฑ์</span></a></li>
+            <li><a href="#"><span class="icon">📋</span><span>รายงาน</span></a></li>
+            <li><a href="#"><span class="icon">🏪</span><span>ร้านค้า</span></a></li>
+            <li><a href="#"><span class="icon">📍</span><span>แผนที่</span></a></li>
+            <li><a href="#"><span class="icon">⚠️</span><span>แจ้งเตือน</span></a></li>
+            <li><a href="#"><span class="icon">📈</span><span>สถิติ</span></a></li>
+            <li><a href="#"><span class="icon">⚙️</span><span>ตั้งค่า</span></a></li>
+        </ul>
+        <div class="qr-section">
+            <h4>LINE Official Account</h4>
+            <div class="qr-code">
+                <svg viewBox="0 0 100 100" xmlns="[w3.org](http://www.w3.org/2000/svg)">
+                    <rect fill="#1a5c3a" width="100" height="100"/>
+                    <rect fill="white" x="10" y="10" width="25" height="25"/>
+                    <rect fill="#1a5c3a" x="15" y="15" width="15" height="15"/>
+                    <rect fill="white" x="65" y="10" width="25" height="25"/>
+                    <rect fill="#1a5c3a" x="70" y="15" width="15" height="15"/>
+                    <rect fill="white" x="10" y="65" width="25" height="25"/>
+                    <rect fill="#1a5c3a" x="15" y="70" width="15" height="15"/>
+                    <rect fill="white" x="40" y="10" width="8" height="8"/>
+                    <rect fill="white" x="40" y="25" width="8" height="8"/>
+                    <rect fill="white" x="50" y="15" width="8" height="8"/>
+                    <rect fill="white" x="10" y="40" width="8" height="8"/>
+                    <rect fill="white" x="25" y="45" width="8" height="8"/>
+                    <rect fill="white" x="40" y="40" width="8" height="8"/>
+                    <rect fill="white" x="55" y="40" width="8" height="8"/>
+                    <rect fill="white" x="70" y="45" width="8" height="8"/>
+                    <rect fill="white" x="80" y="40" width="10" height="8"/>
+                    <rect fill="white" x="45" y="55" width="8" height="8"/>
+                    <rect fill="white" x="60" y="60" width="8" height="8"/>
+                    <rect fill="white" x="75" y="55" width="8" height="8"/>
+                    <rect fill="white" x="45" y="70" width="8" height="8"/>
+                    <rect fill="white" x="60" y="75" width="8" height="8"/>
+                    <rect fill="white" x="75" y="70" width="15" height="8"/>
+                    <rect fill="white" x="65" y="85" width="25" height="8"/>
+                </svg>
+            </div>
+            <div class="line-badge">
+                <span>📱 @SmartDriveThru</span>
+            </div>
+        </div>
+    </aside>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1>🛡️ Smart Drive Thru Dashboard</h1>
+                <p>ระบบเฝ้าระวังและตรวจสอบความปลอดภัยอาหาร</p>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div>
+                        <div style="font-size: 13px; font-weight: 600;">นางสาวสมใจ รักสุขภาพ</div>
+                        <div style="font-size: 11px; color: #888;">เจ้าหน้าที่สาธารณสุข</div>
+                    </div>
+                    <div class="user-avatar">ส</div>
+                </div>
+            </div>
+        </header>
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <label>📅 วันที่:</label>
+                <input type="date" id="startDate" value="2026-05-01">
+                <span>ถึง</span>
+                <input type="date" id="endDate" value="2026-05-25">
+            </div>
+            <div class="filter-group">
+                <label>📦 ประเภทผลิตภัณฑ์:</label>
+                <select id="productType">
+                    <option value="all">ทั้งหมด</option>
+                    <option value="food">อาหาร</option>
+                    <option value="beverage">เครื่องดื่ม</option>
+                    <option value="supplement">อาหารเสริม</option>
+                    <option value="cosmetic">เครื่องสำอาง</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>📍 พื้นที่:</label>
+                <select id="area">
+                    <option value="all">ทุกพื้นที่</option>
+                    <option value="north">ภาคเหนือ</option>
+                    <option value="northeast">ภาคตะวันออกเฉียงเหนือ</option>
+                    <option value="central">ภาคกลาง</option>
+                    <option value="south">ภาคใต้</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="refreshData()">🔄 รีเฟรชข้อมูล</button>
+            <button class="btn btn-secondary">📥 ส่งออกรายงาน</button>
+        </div>
+        <!-- Dashboard -->
+        <div class="dashboard">
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card summary-card total">
+                    <div class="card-icon">📦</div>
+                    <div class="card-value" id="totalProducts">2,458</div>
+                    <div class="card-label">ผลิตภัณฑ์ทั้งหมด</div>
+                    <div class="card-trend trend-up">↑ 12.5% จากเดือนก่อน</div>
+                </div>
+                <div class="card summary-card passed">
+                    <div class="card-icon">✅</div>
+                    <div class="card-value" id="passedProducts">2,156</div>
+                    <div class="card-label">ผ่านมาตรฐาน</div>
+                    <div class="card-trend trend-up">↑ 8.3% จากเดือนก่อน</div>
+                </div>
+                <div class="card summary-card warning">
+                    <div class="card-icon">⚠️</div>
+                    <div class="card-value" id="warningProducts">198</div>
+                    <div class="card-label">ต้องระวัง</div>
+                    <div class="card-trend trend-down">↓ 3.2% จากเดือนก่อน</div>
+                </div>
+                <div class="card summary-card failed">
+                    <div class="card-icon">❌</div>
+                    <div class="card-value" id="failedProducts">67</div>
+                    <div class="card-label">ไม่ผ่านมาตรฐาน</div>
+                    <div class="card-trend trend-down">↓ 15.7% จากเดือนก่อน</div>
+                </div>
+                <div class="card summary-card pending">
+                    <div class="card-icon">⏳</div>
+                    <div class="card-value" id="pendingProducts">37</div>
+                    <div class="card-label">รอตรวจสอบ</div>
+                    <div class="card-trend">— เท่าเดือนก่อน</div>
+                </div>
+            </div>
+            <!-- Pie Charts Row -->
+            <div class="charts-row">
+                <div class="card chart-card">
+                    <h3>📊 สัดส่วนประเภทผลิตภัณฑ์</h3>
+                    <div class="chart-container">
+                        <canvas id="productTypeChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <h3>📈 สถานะการตรวจสอบ</h3>
+                    <div class="chart-container">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <h3>🗺️ การกระจายตามพื้นที่</h3>
+                    <div class="chart-container">
+                        <canvas id="regionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Line Chart -->
+            <div class="line-chart-section">
+                <div class="card line-chart-card">
+                    <h3>📉 แนวโน้มการตรวจสอบรายสัปดาห์ (8 สัปดาห์ล่าสุด)</h3>
+                    <div class="line-chart-container">
+                        <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Risk Table -->
+            <div class="table-section">
+                <div class="card table-card">
+                    <div class="table-header">
+                        <h3>🚨 รายการผลิตภัณฑ์เสี่ยง (ล่าสุด 10 รายการ)</h3>
+                        <button class="btn btn-secondary">ดูทั้งหมด →</button>
+                    </div>
+                    <table class="risk-table">
+                        <thead>
+                            <tr>
+                                <th>รหัสผลิตภัณฑ์</th>
+                                <th>ชื่อผลิตภัณฑ์</th>
+                                <th>ประเภท</th>
+                                <th>ร้านค้า</th>
+                                <th>พื้นที่</th>
+                                <th>ระดับความเสี่ยง</th>
+                                <th>วันที่ตรวจ</th>
+                                <th>การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>PRD-2026-0892</td>
+                                <td>น้ำพริกปลาร้าทอด</td>
+                                <td>อาหาร</td>
+                                <td>ร้านป้าแดง</td>
+                                <td>ภาคเหนือ</td>
+                                <td><span class="status-badge status-high">สูง</span></td>
+                                <td>25/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0891</td>
+                                <td>ครีมบำรุงผิวสมุนไพร</td>
+                                <td>เครื่องสำอาง</td>
+                                <td>ศูนย์สุขภาพดี</td>
+                                <td>ภาคกลาง</td>
+                                <td><span class="status-badge status-high">สูง</span></td>
+                                <td>24/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0885</td>
+                                <td>อาหารเสริมลดน้ำหนัก X</td>
+                                <td>อาหารเสริม</td>
+                                <td>ร้านออนไลน์ A</td>
+                                <td>ภาคตะวันออกเฉียงเหนือ</td>
+                                <td><span class="status-badge status-high">สูง</span></td>
+                                <td>23/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0879</td>
+                                <td>น้ำผลไม้รวมกล่อง</td>
+                                <td>เครื่องดื่ม</td>
+                                <td>ตลาดสดชุมชน</td>
+                                <td>ภาคใต้</td>
+                                <td><span class="status-badge status-medium">ปานกลาง</span></td>
+                                <td>22/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0875</td>
+                                <td>ขนมปังกรอบโฮมเมด</td>
+                                <td>อาหาร</td>
+                                <td>ร้านเบเกอรี่ลุงตู่</td>
+                                <td>ภาคกลาง</td>
+                                <td><span class="status-badge status-medium">ปานกลาง</span></td>
+                                <td>21/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0868</td>
+                                <td>ยาสีฟันสมุนไพร</td>
+                                <td>เครื่องสำอาง</td>
+                                <td>ร้านยาชุมชน</td>
+                                <td>ภาคเหนือ</td>
+                                <td><span class="status-badge status-medium">ปานกลาง</span></td>
+                                <td>20/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0862</td>
+                                <td>น้ำดื่มบรรจุขวด</td>
+                                <td>เครื่องดื่ม</td>
+                                <td>โรงงานน้ำดื่ม B</td>
+                                <td>ภาคตะวันออกเฉียงเหนือ</td>
+                                <td><span class="status-badge status-low">ต่ำ</span></td>
+                                <td>19/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0855</td>
+                                <td>วิตามินซีเม็ดอม</td>
+                                <td>อาหารเสริม</td>
+                                <td>ร้านสุขภาพดี</td>
+                                <td>ภาคใต้</td>
+                                <td><span class="status-badge status-low">ต่ำ</span></td>
+                                <td>18/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0848</td>
+                                <td>แกงเขียวหวานพร้อมทาน</td>
+                                <td>อาหาร</td>
+                                <td>ร้านอาหารปักษ์ใต้</td>
+                                <td>ภาคใต้</td>
+                                <td><span class="status-badge status-low">ต่ำ</span></td>
+                                <td>17/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                            <tr>
+                                <td>PRD-2026-0842</td>
+                                <td>โลชั่นกันแดดสมุนไพร</td>
+                                <td>เครื่องสำอาง</td>
+                                <td>ร้านความงาม C</td>
+                                <td>ภาคกลาง</td>
+                                <td><span class="status-badge status-low">ต่ำ</span></td>
+                                <td>16/05/2569</td>
+                                <td><button class="action-btn">ดูรายละเอียด</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2569 Smart Drive Thru - ระบบเฝ้าระวังและตรวจสอบความปลอดภัยอาหาร | กรมอนามัย กระทรวงสาธารณสุข</p>
+        </footer>
+    </main>
+    <script>
+        // Color palette
+        const colors = {
+            primary: '#1a5c3a',
+            success: '#2ecc71',
+            warning: '#f39c12',
+            danger: '#e74c3c',
+            info: '#3498db',
+            light: '#95a5a6'
+        };
+        // Product Type Pie Chart
+        const productTypeCtx = document.getElementById('productTypeChart').getContext('2d');
+        new Chart(productTypeCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['อาหาร', 'เครื่องดื่ม', 'อาหารเสริม', 'เครื่องสำอาง'],
+                datasets: [{
+                    data: [45, 25, 18, 12],
+                    backgroundColor: [colors.primary, colors.success, colors.warning, colors.info],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+        // Status Pie Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['ผ่านมาตรฐาน', 'ต้องระวัง', 'ไม่ผ่าน', 'รอตรวจ'],
+                datasets: [{
+                    data: [87.7, 8.1, 2.7, 1.5],
+                    backgroundColor: [colors.success, colors.warning, colors.danger, colors.info],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+        // Region Pie Chart
+        const regionCtx = document.getElementById('regionChart').getContext('2d');
+        new Chart(regionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['ภาคกลาง', 'ภาคเหนือ', 'ภาคอีสาน', 'ภาคใต้'],
+                datasets: [{
+                    data: [35, 28, 22, 15],
+                    backgroundColor: [colors.primary, colors.success, colors.warning, colors.info],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 15,
+                            usePointStyle: true,
+                            font: { size: 11 }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+        // Weekly Trend Line Chart
+        const weeklyTrendCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+        new Chart(weeklyTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['สัปดาห์ 14', 'สัปดาห์ 15', 'สัปดาห์ 16', 'สัปดาห์ 17', 'สัปดาห์ 18', 'สัปดาห์ 19', 'สัปดาห์ 20', 'สัปดาห์ 21'],
+                datasets: [
+                    {
+                        label: 'ผ่านมาตรฐาน',
+                        data: [245, 268, 255, 280, 295, 278, 290, 305],
+                        borderColor: colors.success,
+                        backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ต้องระวัง',
+                        data: [28, 32, 25, 30, 22, 28, 24, 26],
+                        borderColor: colors.warning,
+                        backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'ไม่ผ่านมาตรฐาน',
+                        data: [12, 8, 15, 10, 6, 9, 7, 8],
+                        borderColor: colors.danger,
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: { size: 12 }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+        // Refresh Data Function
+        function refreshData() {
+            // Simulate data refresh with animation
+            const cards = document.querySelectorAll('.summary-card .card-value');
+            cards.forEach(card => {
+                card.style.opacity = '0.5';
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                }, 500);
+            });
+            // Show notification
+            alert('🔄 รีเฟรชข้อมูลสำเร็จ!\nข้อมูลอัปเดตล่าสุด: ' + new Date().toLocaleString('th-TH'));
+        }
+        // Initialize date inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            document.getElementById('endDate').valueAsDate = today;
+            document.getElementById('startDate').valueAsDate = startOfMonth;
+        });
+    </script>
+</body>
+</html>
